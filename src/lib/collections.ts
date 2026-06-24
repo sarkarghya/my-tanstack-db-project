@@ -47,18 +47,17 @@ export const projectCollection = createCollection(
     getKey: (item) => item.id,
     onInsert: async ({ transaction }) => {
       const { modified: newProject } = transaction.mutations[0]
-      const result = await orpc.projects.create({
+      await orpc.projects.create({
+        id: newProject.id,
         name: newProject.name,
         description: newProject.description,
         owner_id: newProject.owner_id,
         shared_user_ids: newProject.shared_user_ids,
       })
-
-      return { txid: result.txid }
     },
     onUpdate: async ({ transaction }) => {
       const { modified: updatedProject } = transaction.mutations[0]
-      const result = await orpc.projects.update({
+      await orpc.projects.update({
         id: updatedProject.id,
         data: {
           name: updatedProject.name,
@@ -66,16 +65,12 @@ export const projectCollection = createCollection(
           shared_user_ids: updatedProject.shared_user_ids,
         },
       })
-
-      return { txid: result.txid }
     },
     onDelete: async ({ transaction }) => {
       const { original: deletedProject } = transaction.mutations[0]
-      const result = await orpc.projects.delete({
+      await orpc.projects.delete({
         id: deletedProject.id,
       })
-
-      return { txid: result.txid }
     },
   })
 )
@@ -101,35 +96,30 @@ export const todoCollection = createCollection(
     getKey: (item) => item.id,
     onInsert: async ({ transaction }) => {
       const { modified: newTodo } = transaction.mutations[0]
-      const result = await orpc.todos.create({
+      await orpc.todos.create({
+        id: newTodo.id,
         user_id: newTodo.user_id,
         text: newTodo.text,
         completed: newTodo.completed,
         project_id: newTodo.project_id,
         user_ids: newTodo.user_ids,
       })
-
-      return { txid: result.txid }
     },
     onUpdate: async ({ transaction }) => {
       const { modified: updatedTodo } = transaction.mutations[0]
-      const result = await orpc.todos.update({
+      await orpc.todos.update({
         id: updatedTodo.id,
         data: {
           text: updatedTodo.text,
           completed: updatedTodo.completed,
         },
       })
-
-      return { txid: result.txid }
     },
     onDelete: async ({ transaction }) => {
       const { original: deletedTodo } = transaction.mutations[0]
-      const result = await orpc.todos.delete({
+      await orpc.todos.delete({
         id: deletedTodo.id,
       })
-
-      return { txid: result.txid }
     },
   })
 )

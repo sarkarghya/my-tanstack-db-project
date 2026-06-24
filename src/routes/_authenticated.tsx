@@ -1,6 +1,6 @@
 import * as React from "react"
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Outlet } from "@tanstack/react-router"
 import { authClient, authStateCollection } from "@/lib/auth-client"
 import { useLiveQuery } from "@tanstack/react-db"
@@ -59,6 +59,8 @@ function AuthenticatedLayout() {
   const navigate = useNavigate()
   const [showNewProjectForm, setShowNewProjectForm] = useState(false)
   const [newProjectName, setNewProjectName] = useState(``)
+  const [projectCreateError, setProjectCreateError] = useState(``)
+  const defaultProjectCreateStarted = useRef(false)
 
   const { data: projects, isLoading } = useLiveQuery((q) =>
     q.from({ projectCollection })
@@ -68,14 +70,19 @@ function AuthenticatedLayout() {
   useEffect(() => {
     if (session && projects && !isLoading) {
       const hasProject = projects.length > 0
-      if (!hasProject) {
-        projectCollection.insert({
-          id: Math.floor(Math.random() * 100000),
+      if (!hasProject && !defaultProjectCreateStarted.current) {
+        defaultProjectCreateStarted.current = true
+        void persistProject({
+          id: createClientId(),
           name: `Default`,
           description: `Default project`,
           owner_id: session.user.id,
           shared_user_ids: [],
           created_at: new Date(),
+        }).catch((error) => {
+          defaultProjectCreateStarted.current = false
+          console.error(`Failed to create default project`, error)
+          setProjectCreateError(`Failed to create default project`)
         })
       }
     }
@@ -86,18 +93,25 @@ function AuthenticatedLayout() {
     navigate({ to: `/login` })
   }
 
-  const handleCreateProject = () => {
+  const handleCreateProject = async () => {
     if (newProjectName.trim() && session) {
-      projectCollection.insert({
-        id: Math.floor(Math.random() * 100000),
-        name: newProjectName.trim(),
-        description: ``,
-        owner_id: session.user.id,
-        shared_user_ids: [],
-        created_at: new Date(),
-      })
-      setNewProjectName(``)
-      setShowNewProjectForm(false)
+      setProjectCreateError(``)
+
+      try {
+        await persistProject({
+          id: createClientId(),
+          name: newProjectName.trim(),
+          description: ``,
+          owner_id: session.user.id,
+          shared_user_ids: [],
+          created_at: new Date(),
+        })
+        setNewProjectName(``)
+        setShowNewProjectForm(false)
+      } catch (error) {
+        console.error(`Failed to create project`, error)
+        setProjectCreateError(`Failed to create project`)
+      }
     }
   }
 
@@ -185,6 +199,10 @@ function AuthenticatedLayout() {
               </div>
             )}
 
+            {projectCreateError && (
+              <p className="mb-4 text-sm text-red-600">{projectCreateError}</p>
+            )}
+
             <nav className="space-y-1">
               {projects.map((project) => (
                 <Link
@@ -205,4 +223,15 @@ function AuthenticatedLayout() {
       </div>
     </div>
   )
+}
+
+function createClientId() {
+  return Math.floor(1_000_000_000 + Math.random() * 1_000_000_000)
+}
+
+async function persistProject(
+  project: Parameters<typeof projectCollection.insert>[0]
+) {
+  const tx = projectCollection.insert(project)
+  await tx.isPersisted.promise
 }

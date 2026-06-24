@@ -22,6 +22,7 @@ export const projectsRouter = {
         const txid = await generateTxId(tx)
         const [newItem] = await tx
           .insert(projectsTable)
+          .overridingSystemValue()
           .values(input)
           .returning()
         return { item: newItem, txid }

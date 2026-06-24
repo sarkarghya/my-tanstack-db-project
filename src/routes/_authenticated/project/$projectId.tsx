@@ -67,18 +67,23 @@ function ProjectPage() {
   )
   const project = projects[0]
 
-  const addTodo = () => {
+  const addTodo = async () => {
     if (newTodoText.trim() && session) {
-      todoCollection.insert({
-        user_id: session.user.id,
-        id: Math.floor(Math.random() * 100000),
-        text: newTodoText.trim(),
-        completed: false,
-        project_id: parseInt(projectId),
-        user_ids: [],
-        created_at: new Date(),
-      })
-      setNewTodoText(``)
+      try {
+        const tx = todoCollection.insert({
+          user_id: session.user.id,
+          id: createClientId(),
+          text: newTodoText.trim(),
+          completed: false,
+          project_id: parseInt(projectId),
+          user_ids: [],
+          created_at: new Date(),
+        })
+        await tx.isPersisted.promise
+        setNewTodoText(``)
+      } catch (error) {
+        console.error(`Failed to create todo`, error)
+      }
     }
   }
 
@@ -239,4 +244,8 @@ function ProjectPage() {
       </div>
     </div>
   )
+}
+
+function createClientId() {
+  return Math.floor(1_000_000_000 + Math.random() * 1_000_000_000)
 }

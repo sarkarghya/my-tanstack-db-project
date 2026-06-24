@@ -10,7 +10,11 @@ export const todosRouter = {
     .handler(async ({ context, input }) => {
       const result = await context.db.transaction(async (tx) => {
         const txid = await generateTxId(tx)
-        const [newItem] = await tx.insert(todosTable).values(input).returning()
+        const [newItem] = await tx
+          .insert(todosTable)
+          .overridingSystemValue()
+          .values(input)
+          .returning()
         return { item: newItem, txid }
       })
 

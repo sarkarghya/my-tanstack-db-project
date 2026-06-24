@@ -42,12 +42,16 @@ export const todosTable = pgTable(`todos`, {
 export const selectProjectSchema = createSelectSchema(projectsTable)
 export const createProjectSchema = createInsertSchema(projectsTable).omit({
   created_at: true,
+}).extend({
+  id: z.number().optional(),
 })
 export const updateProjectSchema = createUpdateSchema(projectsTable)
 
 export const selectTodoSchema = createSelectSchema(todosTable)
 export const createTodoSchema = createInsertSchema(todosTable).omit({
   created_at: true,
+}).extend({
+  id: z.number().optional(),
 })
 export const updateTodoSchema = createUpdateSchema(todosTable)
 
